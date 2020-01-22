@@ -1,0 +1,35 @@
+#AuthType Basic
+#AuthName "Auth required!"
+#AuthUserFile /home/wezom/web/ikuracrm.wezom.agency/public_html/.htpasswd
+#Require valid-user
+#<Files .htpasswd>
+#   deny from all
+#</Files>
+
+# Disable Directory listing
+Options -Indexes
+
+# block files which needs to be hidden // in here specify .example extension of the file
+<Files ~ "\.(env|json|config.js|md|gitignore|gitattributes|lock)$">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# in here specify full file name sperator '|'
+<Files ~ "(artisan)$">
+    Order allow,deny
+    Deny from all
+</Files>
+
+RewriteEngine On
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+#RewriteRule ^storage(/.*) public/storage/$1 [L]
+
+#RewriteCond %{REQUEST_FILENAME} !-d
+#RewriteCond %{REQUEST_FILENAME} !-f
+#RewriteRule ^admin(/.*) public/admin/$1 [L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule (.*) public/$1 [L]

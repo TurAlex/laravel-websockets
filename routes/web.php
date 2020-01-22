@@ -14,5 +14,6 @@
 Auth::routes();
 
 Route::get('/', 'ChatsController@index');
+Route::get('send-test-message', 'ChatsController@sendTestMessage');
 Route::get('messages', 'ChatsController@fetchMessages');
 Route::post('messages', 'ChatsController@sendMessage');
