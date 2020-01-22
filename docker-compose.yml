@@ -1,0 +1,111 @@
+version: '3'
+
+services:
+  webdemo_web:
+    image: webdevops/apache:alpine
+    container_name: 'webdemo_web'
+    hostname: 'webdemo_web'
+    environment:
+      WEB_DOCUMENT_ROOT: /app
+      WEB_PHP_SOCKET: webdemo_php:9000
+      LOG_STDOUT: /app/docker/storage/logs/web.access.log
+      LOG_STDERR: /app/docker/storage/logs/web.errors.log
+    networks:
+      default:
+        ipv4_address: 192.168.6.101
+    ports:
+      - ${DOCKER_BRIDGE}:80:80
+    volumes:
+      - ./:/app:rw,cached
+    working_dir: /app
+    depends_on:
+      - webdemo_php
+    #      - webdemo_node
+    restart: always
+
+  webdemo_php:
+    build:
+      context: ./
+      dockerfile: docker/dev/php/Dockerfile
+    container_name: 'webdemo_php'
+    hostname: 'webdemo_php'
+    networks:
+      default:
+        ipv4_address: 192.168.6.110
+    volumes:
+      - ./:/app:rw,cached
+      - ./docker/dev/php/.bashrc:/root/.bashrc
+      - ./docker/dev/php/.bash_aliases:/root/.bash_aliases
+    working_dir: /app
+    ports:
+      - ${DOCKER_BRIDGE}:6001:6001
+    environment:
+      TERM: xterm-256color
+      COMPOSER_ALLOW_SUPERUSER: 1
+      XDEBUG_CONFIG: "remote_host=192.168.6.1 remote_enable=1"
+      PHP_IDE_CONFIG: "serverName=Docker"
+    restart: always
+    #    links:
+    #      - webdemo_cache
+    depends_on:
+      - webdemo_db
+    #      - webdemo_db_testing
+    #      - webdemo_cache
+    entrypoint: ["/bin/bash", "/usr/bin/php_init.sh"]
+
+  webdemo_db:
+    image: mysql:5.7.28
+    container_name: 'webdemo_db'
+    hostname: 'webdemo_db'
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db
+    networks:
+      default:
+        ipv4_address: 192.168.6.120
+    volumes:
+      - ./docker/storage/db/mysql:/var/lib/mysql
+
+#  webdemo_db_testing:
+#    image: mariadb
+#    container_name: 'webdemo_db_testing'
+#    hostname: 'webdemo_db_testing'
+#    restart: always
+#    environment:
+#      MYSQL_ROOT_PASSWORD: root
+#      MYSQL_DATABASE: db_testing
+#    networks:
+#      default:
+#        ipv4_address: 192.168.6.121
+#    tmpfs:
+#      - /var/lib/mysql
+
+#  webdemo_cache:
+#    image: nbtri/alpine-redis
+#    environment:
+#      REDIS_PASSWORD: webdemo_cache_password
+#    container_name: 'webdemo_cache'
+#    hostname: 'webdemo_cache'
+#    networks:
+#      default:
+#        ipv4_address: 192.168.6.104
+
+#  webdemo_node:
+#    image: node:8-slim
+#    container_name: 'webdemo_node'
+#    hostname: 'webdemo_node'
+#    working_dir: /app
+#    volumes:
+#      - ./:/app:rw,cached
+#    networks:
+#      default:
+#        ipv4_address: 192.168.6.130
+#    tty: true
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.6.0/24
